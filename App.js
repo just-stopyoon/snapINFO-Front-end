@@ -2,8 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image } from 'react-native';
 import * as Font from 'expo-font';
 import AppLoading from 'expo-app-loading';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import MainScreen from './src/Main'; // Main 화면 import
+import AccountScreen from './src/Account'; // Account1 화면 import
 
-export default function App() {
+const Stack = createNativeStackNavigator();
+
+function HomeScreen({ navigation }) {
   const [fontsLoaded, setFontsLoaded] = useState(false);
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -26,22 +32,20 @@ export default function App() {
   }
 
   const handleLogin = () => {
-    // 로그인 로직
-    alert(`ID: ${id}, Password: ${password}`);
+    navigation.navigate('Main');
   };
 
   const handleSignUp = () => {
-    // 회원가입 로직
-    alert('회원가입 페이지로 이동합니다.');
+    navigation.navigate('Account'); // Account 스크린으로 네비게이트
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Image source={require('./assets/icon_small.png')} style={styles.logoImage} />
+        <Image source={require('./assets/logo_icon.png')} style={styles.logoImage} />
         <Text style={styles.logoText}>SNAPINFO</Text>
       </View>
-      <Text style={styles.title}>SNAPINFO 회원이라면</Text>
+      <Text style={styles.title}>회원이라면</Text>
       <TextInput
         style={styles.input}
         placeholder="아이디"
@@ -65,11 +69,33 @@ export default function App() {
         <Text style={styles.findText}> | </Text>
         <Text style={styles.findText}>비밀번호 찾기</Text>
       </View>
-      <Text style={styles.subTitle}>아직, SNAPINFO 회원이 아니시다면</Text>
+      <Text style={styles.subTitle}>아직, 회원이 아니라면</Text>
       <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp}>
         <Text style={styles.signUpButtonText}>회원가입</Text>
       </TouchableOpacity>
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="Main" 
+          component={MainScreen} 
+        />
+        <Stack.Screen 
+          name="Account" 
+          component={AccountScreen} // Account1 컴포넌트를 Account 스크린으로 등록
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -80,7 +106,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 80, // 상단에 충분한 공간을 줍니다.
+    paddingTop: 80,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -90,19 +116,20 @@ const styles = StyleSheet.create({
   },
   logoImage: {
     width: 30,
-    height: 30,
-    marginRight: 10,
+    height: 38,
+    marginRight: 5,
   },
   logoText: {
     fontFamily: 'PaytoneOne-Regular',
-    fontSize: 20,
+    fontSize: 25,
     color: '#28A745',
   },
   title: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 20,
-    alignSelf: 'flex-start', // 왼쪽 정렬
-    marginBottom: 10,
+    fontSize: 23,
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    marginBottom: 13,
   },
   input: {
     width: '100%',
@@ -129,7 +156,7 @@ const styles = StyleSheet.create({
   },
   findOptions: {
     flexDirection: 'row',
-    justifyContent: 'center', // 가운데 정렬
+    justifyContent: 'center',
     width: '100%',
     marginBottom: 40,
   },
@@ -140,8 +167,8 @@ const styles = StyleSheet.create({
   },
   subTitle: {
     fontFamily: 'Pretendard-Bold',
-    fontSize: 16,
-    alignSelf: 'flex-start', // 왼쪽 정렬
+    fontSize: 23,
+    alignSelf: 'flex-start',
     marginBottom: 20,
   },
   signUpButton: {
