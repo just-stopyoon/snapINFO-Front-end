@@ -57,7 +57,7 @@ export default function AccountScreen() {
             <Text style={styles.permissionTitle}>
               카메라 <Text style={styles.required}>(필수)</Text>
             </Text>
-            <Text style={styles.permissionDescription}>인증 사진을 찍기 위해 필요해요</Text>
+            <Text style={styles.permissionDescription}>앨범 속 사진에 접근하기 위해 필요해요</Text>
           </View>
         </View>
         <View style={styles.permissionRow}>
@@ -66,7 +66,7 @@ export default function AccountScreen() {
             <Text style={styles.permissionTitle}>
               알림 <Text style={styles.required}>(필수)</Text>
             </Text>
-            <Text style={styles.permissionDescription}>하루에 한 번씩 외출 알림을 위해 필요해요</Text>
+            <Text style={styles.permissionDescription}>혹시 모를 푸시 알림을 위해 필요해요</Text>
           </View>
         </View>
       </View>
