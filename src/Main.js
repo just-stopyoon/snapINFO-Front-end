@@ -1,184 +1,167 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Modal, FlatList, TouchableWithoutFeedback } from 'react-native';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { launchImageLibrary } from 'react-native-image-picker';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Modal,
+  FlatList,
+  TouchableWithoutFeedback,
+  Alert,
+} from 'react-native';
 
 function CategoryRoute({ savedData, category }) {
-  const filteredData = savedData.filter(item => item.category === category);
+  const filteredData =
+    category === '전체' ? savedData : savedData.filter((item) => item.category === category);
+
   return (
     <FlatList
       data={filteredData}
+      numColumns={2} // 두 개의 열로 갤러리 형식
       keyExtractor={(item, index) => index.toString()}
       renderItem={({ item }) => (
-        <View style={styles.listItem}>
-          {item.imageUri ? <Image source={{ uri: item.imageUri }} style={styles.listItemImage} /> : null}
-          <Text style={styles.listItemText}>{item.text}</Text>
+        <View style={[styles.card, { backgroundColor: getCategoryColor(item.category) }]}>
+          {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.cardImage} />}
+          <Text style={styles.cardTitle}>{item.text}</Text>
+          <Text style={styles.cardCategory}>{item.category}</Text>
         </View>
       )}
       ListEmptyComponent={
-        <View style={styles.contentContainer}>
+        <View style={styles.emptyContainer}>
           <Text style={styles.noDataText}>아직 아무런 정보도 저장되지 않았어요ㅠㅠ</Text>
-          <Text style={styles.noDataText}>사진을 등록해주세요!</Text>
         </View>
       }
     />
   );
 }
 
-const Tab = createMaterialTopTabNavigator();
+const getCategoryColor = (category) => {
+  switch (category) {
+    case '운동':
+      return '#E3F2FD';
+    case '음식점':
+      return '#FFF3E0';
+    case '쇼핑':
+      return '#E8F5E9';
+    case '생활꿀팁':
+      return '#F3E5F5';
+    case '공연,전시':
+      return '#FFEBEE';
+    default:
+      return '#FFFFFF';
+  }
+};
 
 export default function MainScreen() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [inputText, setInputText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('운동');
-  const [selectedImage, setSelectedImage] = useState(null);
   const [savedData, setSavedData] = useState([]);
-  const [editableTitle, setEditableTitle] = useState('다이어트 방법');
-  const [isEditing, setIsEditing] = useState(false);
+  const [showCategoryList, setShowCategoryList] = useState(false);
 
   const categories = ['운동', '음식점', '쇼핑', '생활꿀팁', '공연,전시'];
 
   const handleSave = () => {
-    setSavedData([...savedData, { category: selectedCategory, text: inputText, imageUri: selectedImage?.uri }]);
+    if (!inputText.trim()) {
+      Alert.alert('오류', '내용을 입력해주세요!');
+      return;
+    }
+
+    setSavedData([
+      ...savedData,
+      { category: selectedCategory, text: inputText, imageUri: null },
+    ]);
     setInputText('');
-    setSelectedImage(null);
-    setEditableTitle('다이어트 방법');
-    setIsEditing(false);
+    setSelectedCategory('운동');
     setModalVisible(false);
-  };
-
-  const handleImagePicker = () => {
-    launchImageLibrary({ mediaType: 'photo' }, response => {
-      if (response.assets && response.assets.length > 0) {
-        setSelectedImage(response.assets[0]);
-      }
-    });
-  };
-
-  const handleModalClose = () => {
-    setModalVisible(false);
-    setIsEditing(false);
-  };
-
-  const handleEditToggle = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setDropdownVisible(false);
   };
 
   return (
     <View style={styles.container}>
-      {/* 상단 검색바 */}
+      {/* 검색 바 */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="검색어를 입력해주세요"
           placeholderTextColor="#999"
         />
-        <Image
-          source={require('../assets/search-normal.png')}
-          style={styles.searchIcon}
-        />
       </View>
 
       {/* 탭 네비게이션 */}
-      <Tab.Navigator
-        screenOptions={{
-          tabBarActiveTintColor: '#28A745',
-          tabBarInactiveTintColor: '#666',
-          tabBarIndicatorStyle: { backgroundColor: '#28A745' },
-          tabBarStyle: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
-          tabBarScrollEnabled: true,
-          tabBarItemStyle: { width: 100, height: 50 },
-          tabBarLabelStyle: { fontSize: 14, fontFamily: 'Pretendard-Bold' },
-        }}
-      >
-        <Tab.Screen name="전체" component={() => <CategoryRoute savedData={savedData} category="전체" />} />
-        <Tab.Screen name="운동" component={() => <CategoryRoute savedData={savedData} category="운동" />} />
-        <Tab.Screen name="음식점" component={() => <CategoryRoute savedData={savedData} category="음식점" />} />
-        <Tab.Screen name="쇼핑" component={() => <CategoryRoute savedData={savedData} category="쇼핑" />} />
-        <Tab.Screen name="생활꿀팁" component={() => <CategoryRoute savedData={savedData} category="생활꿀팁" />} />
-        <Tab.Screen name="공연,전시" component={() => <CategoryRoute savedData={savedData} category="공연,전시" />} />
-      </Tab.Navigator>
+      <FlatList
+        data={['전체', ...categories]}
+        horizontal
+        keyExtractor={(item) => item}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.tabItem}
+            onPress={() => setSelectedCategory(item)}
+          >
+            <Text style={[styles.tabText, selectedCategory === item && styles.tabTextActive]}>
+              {item}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      {/* 갤러리 */}
+      <CategoryRoute savedData={savedData} category={selectedCategory} />
 
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.addButtonText}>사진 등록하기</Text>
       </TouchableOpacity>
 
-      {/* Modal for text input and image selection */}
+      {/* 모달 */}
       <Modal
         transparent={true}
         visible={modalVisible}
         animationType="slide"
-        onRequestClose={handleModalClose}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={handleModalClose}>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
           <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback onPress={() => {}}>
+            <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-                <View style={styles.modalTitleRow}>
-                  {isEditing ? (
-                    <TextInput
-                      style={styles.modalTitleInput}
-                      value={editableTitle}
-                      onChangeText={setEditableTitle}
-                      placeholder="제목을 입력하세요"
-                    />
-                  ) : (
-                    <Text style={styles.modalTitle}>{editableTitle}</Text>
-                  )}
-                  <TouchableOpacity
-                    style={styles.dropdown}
-                    onPress={() => setDropdownVisible(!dropdownVisible)}
-                  >
-                    <Text style={styles.dropdownText}>{selectedCategory}</Text>
-                    <Image
-                      source={require('../assets/dropdown-arrow.png')}
-                      style={styles.dropdownIcon}
-                      resizeMode="contain"
-                    />
-                  </TouchableOpacity>
-                </View>
-                {dropdownVisible && (
-                  <View style={styles.dropdownList}>
+                <Text style={styles.modalTitle}>새로운 정보 추가</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="내용을 입력하세요"
+                  value={inputText}
+                  onChangeText={setInputText}
+                />
+                <TouchableOpacity
+                  style={styles.categorySelector}
+                  onPress={() => setShowCategoryList((prev) => !prev)}
+                >
+                  <Text style={styles.categorySelectorText}>{selectedCategory}</Text>
+                </TouchableOpacity>
+                {showCategoryList && (
+                  <View style={styles.categoryList}>
                     {categories.map((category) => (
                       <TouchableOpacity
                         key={category}
-                        style={styles.dropdownItem}
-                        onPress={() => handleCategorySelect(category)}
+                        style={styles.categoryItem}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setShowCategoryList(false);
+                        }}
                       >
-                        <Text style={styles.dropdownItemText}>{category}</Text>
+                        <Text style={styles.categoryItemText}>{category}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 )}
-                {isEditing ? (
-                  <TextInput
-                    style={styles.modalInputMultiline}
-                    placeholder="내용을 입력하세요"
-                    value={inputText}
-                    onChangeText={setInputText}
-                    multiline={true}
-                  />
-                ) : (
-                  <Text style={styles.modalContentText}>{inputText}</Text>
-                )}
-                {selectedImage && (
-                  <Image source={{ uri: selectedImage.uri }} style={styles.selectedImagePreview} />
-                )}
-                <TouchableOpacity style={styles.imageEditButton} onPress={handleImagePicker}>
-                  <Text style={styles.imageEditButtonText}>사진 수정</Text>
-                </TouchableOpacity>
                 <View style={styles.modalButtons}>
-                  <TouchableOpacity style={styles.modalButtonEdit} onPress={handleEditToggle}>
-                    <Text style={styles.modalButtonText}>{isEditing ? "수정 완료" : "내용 수정"}</Text>
+                  <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
+                    <Text style={styles.modalButtonText}>저장</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalButtonDelete}>
-                    <Text style={styles.modalButtonText}>정보 삭제</Text>
+                  <TouchableOpacity
+                    style={styles.modalButtonClose}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.modalButtonText}>닫기</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -194,8 +177,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingTop: 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -203,27 +184,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     paddingHorizontal: 10,
-  },
-  searchIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 10,
+    marginVertical: 10,
+    marginHorizontal: 16,
   },
   searchInput: {
     flex: 1,
     height: 40,
     fontSize: 16,
   },
-  contentContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
-  noDataText: {
+  tabText: {
     fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
+    color: '#666',
+  },
+  tabTextActive: {
+    color: '#28A745',
+    fontWeight: 'bold',
   },
   addButton: {
     height: 50,
@@ -231,8 +210,8 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 50,
-    marginHorizontal: 16,
+    margin: 16,
+    marginBottom: 32,
   },
   addButtonText: {
     fontSize: 18,
@@ -246,135 +225,104 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: 350,
+    width: '90%',
     padding: 20,
     backgroundColor: '#fff',
     borderRadius: 10,
-  },
-  modalTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    position: 'relative',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 20,
   },
-  modalTitleInput: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    flex: 1,
-    marginRight: 10,
-  },
-  dropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 0,
-    backgroundColor: '#fff',
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: '#333',
-    marginRight: 4,
-  },
-  dropdownIcon: {
-    width: 12,
-    height: 12,
-  },
-  dropdownList: {
-    position: 'absolute',
-    top: 40,
-    right: 0,
-    width: '100%',
-    backgroundColor: '#fff',
-    borderWidth: 1,
+  modalInput: {
     borderColor: '#ddd',
+    borderWidth: 1,
     borderRadius: 8,
-    zIndex: 1000,
-  },
-  dropdownItem: {
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    height: 50,
+    marginBottom: 20,
   },
-  dropdownItemText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  modalInputMultiline: {
-    width: '100%',
-    height: 100,
-    borderColor: '#ddd',
-    borderWidth: 1,
+  categorySelector: {
+    padding: 10,
+    backgroundColor: '#E3F2FD',
     borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-    textAlignVertical: 'top',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  modalContentText: {
-    width: '100%',
-    height: 100,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-    textAlignVertical: 'top',
+  categorySelectorText: {
     fontSize: 16,
+    fontWeight: 'bold',
     color: '#333',
   },
-  selectedImagePreview: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
+  categoryList: {
     marginBottom: 20,
   },
-  imageEditButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 20,
+  categoryItem: {
+    padding: 10,
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    marginVertical: 5,
   },
-  imageEditButtonText: {
-    color: '#007BFF',
+  categoryItemText: {
+    fontSize: 14,
+    color: '#333',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  modalButtonEdit: {
-    padding: 10,
-    backgroundColor: '#FFA500',
-    borderRadius: 5,
+  modalButtonSave: {
     flex: 1,
+    backgroundColor: '#28A745',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 5,
+    height: 40,
   },
-  modalButtonDelete: {
-    padding: 10,
-    backgroundColor: '#FF4500',
-    borderRadius: 5,
+  modalButtonClose: {
     flex: 1,
-    marginLeft: 5,
+    backgroundColor: '#6c757d',
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 40,
   },
   modalButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    textAlign: 'center',
   },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  listItemImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 5,
-    marginRight: 10,
-  },
-  listItemText: {
-    fontSize: 16,
+  card: {
     flex: 1,
+    margin: 8,
+    aspectRatio: 1, // 정사각형 비율
+    borderRadius: 8,
+    elevation: 2,
+    backgroundColor: '#fff',
+  },
+  cardImage: {
+    width: '100%',
+    height: '70%', // 이미지 높이를 카드의 70%로
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  cardCategory: {
+    fontSize: 14,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noDataText: {
+    fontSize: 16,
+    color: '#666',
   },
 });
-
