@@ -16,18 +16,31 @@ function CategoryRoute({ savedData, category }) {
   const filteredData =
     category === "전체" ? savedData : savedData.filter((item) => item.category === category);
 
+  const placeholderData = [{ key: "placeholder1" }, { key: "placeholder2" }];
+
+  const dataToRender =
+    filteredData.length === 1 ? [...filteredData, ...placeholderData] : filteredData;
+
   return (
     <FlatList
-      data={filteredData}
+      data={dataToRender}
       numColumns={2}
       keyExtractor={(item, index) => index.toString()}
-      renderItem={({ item }) => (
-        <View style={[styles.card, { backgroundColor: getCategoryColor(item.category) }]}>
-          {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.cardImage} />}
-          <Text style={styles.cardTitle}>{item.text}</Text>
-          <Text style={styles.cardCategory}>{item.category}</Text>
-        </View>
-      )}
+      renderItem={({ item }) =>
+        item.key ? (
+          <View style={styles.cardPlaceholder} />
+        ) : (
+          <View style={styles.card}>
+            {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.cardImage} />}
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardCategory}>{item.category}</Text>
+            </View>
+            <Text style={styles.cardTitle} numberOfLines={1}>
+              {item.title}
+            </Text>
+          </View>
+        )
+      }
       ListEmptyComponent={
         <View style={styles.emptyContainer}>
           <Text style={styles.noDataText}>아직 아무런 정보도 저장되지 않았어요ㅠㅠ</Text>
@@ -37,25 +50,9 @@ function CategoryRoute({ savedData, category }) {
   );
 }
 
-const getCategoryColor = (category) => {
-  switch (category) {
-    case "운동":
-      return "#FFFFFF";
-    case "음식점":
-      return "#FFFFFF";
-    case "쇼핑":
-      return "#FFFFFF";
-    case "생활꿀팁":
-      return "#FFFFFF";
-    case "공연,전시":
-      return "#FFFFFF";
-    default:
-      return "#FFFFFF";
-  }
-};
-
 export default function MainScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [inputTitle, setInputTitle] = useState("");
   const [inputText, setInputText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("운동");
   const [savedData, setSavedData] = useState([]);
@@ -64,17 +61,17 @@ export default function MainScreen() {
   const categories = ["운동", "음식점", "쇼핑", "생활꿀팁", "공연,전시"];
 
   const handleSave = () => {
-    if (!inputText.trim()) {
-      Alert.alert("오류", "내용을 입력해주세요!");
+    if (!inputTitle.trim() || !inputText.trim()) {
+      Alert.alert("오류", "제목과 내용을 모두 입력해주세요!");
       return;
     }
 
     setSavedData([
       ...savedData,
-      { category: selectedCategory, text: inputText, imageUri: null },
+      { category: selectedCategory, title: inputTitle, text: inputText, imageUri: null },
     ]);
+    setInputTitle("");
     setInputText("");
-    setSelectedCategory("운동");
     setModalVisible(false);
   };
 
@@ -89,11 +86,12 @@ export default function MainScreen() {
         />
       </View>
 
-      {/* 탭 네비게이션 */}
+      {/* 카테고리 네비게이션 */}
       <FlatList
         data={["전체", ...categories]}
         horizontal
         keyExtractor={(item) => item}
+        contentContainerStyle={styles.tabContainer}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.tabItem}
@@ -125,7 +123,12 @@ export default function MainScreen() {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>새로운 정보 추가</Text>
+                  <TextInput
+                    style={styles.modalTitleInput}
+                    placeholder="제목을 입력하세요"
+                    value={inputTitle}
+                    onChangeText={setInputTitle}
+                  />
                   <TouchableOpacity
                     style={styles.categoryDropdown}
                     onPress={() => setShowDropdown((prev) => !prev)}
@@ -194,6 +197,12 @@ const styles = StyleSheet.create({
     height: 40,
     fontSize: 16,
   },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    height: 50,
+    paddingHorizontal: 10,
+  },
   tabItem: {
     paddingVertical: 10,
     paddingHorizontal: 10,
@@ -207,9 +216,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   addButton: {
-    height: 50,
+    height: 60,
     backgroundColor: "#28A745",
-    borderRadius: 25,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     margin: 30,
@@ -219,6 +228,58 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#fff",
     fontWeight: "bold",
+  },
+  card: {
+    flex: 1,
+    margin: 8,
+    aspectRatio: 1,
+    borderRadius: 10,
+    elevation: 2,
+    borderWidth: 0.5,
+    borderColor: "lightgray",
+    backgroundColor: "#fff",
+    position: "relative",
+  },
+  cardPlaceholder: {
+    flex: 1,
+    margin: 8,
+    aspectRatio: 1,
+    backgroundColor: "transparent",
+  },
+  cardHeader: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "#fff",
+    borderRadius: 5,
+    paddingHorizontal: 5,
+  },
+  cardImage: {
+    width: "100%",
+    height: "70%",
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  cardTitle: {
+    marginTop: 10,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginHorizontal: 10,
+  },
+  cardCategory: {
+    marginTop: 3,
+    marginRight: -5,
+    fontSize: 15,
+    color: "#28A745",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noDataText: {
+    fontSize: 16,
+    color: "#666",
   },
   modalContainer: {
     flex: 1,
@@ -233,58 +294,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     position: "relative",
   },
+  modalTitleInput: {
+    fontSize: 18,
+    fontWeight: "bold",
+    flex: 1,
+    marginRight: 10,
+  },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  categoryDropdown: {
-    padding: 10,
-    borderRadius: 8,
-  },
-  categoryDropdownText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#28A745",
-    paddingRight: 10,
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: 60,
-    right: 20,
-    width: 100,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 10,
-    elevation: 5,
-    zIndex: 10,
-  },
-  dropdownMenuItem: {
-    padding: 10,
-    borderBottomColor: "#ddd",
-    borderBottomWidth: 1,
-  },
-  dropdownMenuItemText: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: "#333",
   },
   modalInput: {
     borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
-    height: 50,
-    marginTop: 20,
+    height: 300,
+    marginVertical: 10,
   },
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: 10,
   },
   modalButtonSave: {
     flex: 1,
@@ -306,39 +338,5 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#fff",
     fontWeight: "bold",
-  },
-  card: {
-    flex: 1,
-    margin: 8,
-    aspectRatio: 1,
-    borderRadius: 10,
-    elevation: 2,
-    backgroundColor: "#fff",
-  },
-  cardImage: {
-    width: "100%",
-    height: "70%",
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  cardTitle: {
-    marginTop: 10,
-    marginLeft:10,
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  cardCategory: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#28A745",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  noDataText: {
-    fontSize: 16,
-    color: "#666",
   },
 });
