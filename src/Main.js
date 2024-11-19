@@ -40,15 +40,15 @@ function CategoryRoute({ savedData, category }) {
 const getCategoryColor = (category) => {
   switch (category) {
     case "운동":
-      return "#E3F2FD";
+      return "#FFFFFF";
     case "음식점":
-      return "#FFF3E0";
+      return "#FFFFFF";
     case "쇼핑":
-      return "#E8F5E9";
+      return "#FFFFFF";
     case "생활꿀팁":
-      return "#F3E5F5";
+      return "#FFFFFF";
     case "공연,전시":
-      return "#FFEBEE";
+      return "#FFFFFF";
     default:
       return "#FFFFFF";
   }
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginVertical: 10,
-    marginHorizontal: 16,
+    marginHorizontal: 10,
   },
   searchInput: {
     flex: 1,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
   },
   tabText: {
     fontSize: 16,
@@ -212,8 +212,8 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
-    margin: 16,
-    marginBottom: 32,
+    margin: 30,
+    marginBottom: 50,
   },
   addButtonText: {
     fontSize: 18,
@@ -244,19 +244,19 @@ const styles = StyleSheet.create({
   },
   categoryDropdown: {
     padding: 10,
-    backgroundColor: "#E3F2FD",
     borderRadius: 8,
   },
   categoryDropdownText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: "#28A745",
+    paddingRight: 10,
   },
   dropdownMenu: {
     position: "absolute",
     top: 60,
     right: 20,
-    width: 120,
+    width: 100,
     backgroundColor: "#fff",
     borderRadius: 8,
     padding: 10,
@@ -270,6 +270,7 @@ const styles = StyleSheet.create({
   },
   dropdownMenuItemText: {
     fontSize: 14,
+    textAlign: 'center',
     color: "#333",
   },
   modalInput: {
@@ -310,23 +311,26 @@ const styles = StyleSheet.create({
     flex: 1,
     margin: 8,
     aspectRatio: 1,
-    borderRadius: 8,
+    borderRadius: 10,
     elevation: 2,
     backgroundColor: "#fff",
   },
   cardImage: {
     width: "100%",
     height: "70%",
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 8,
   },
   cardTitle: {
-    fontSize: 16,
+    marginTop: 10,
+    marginLeft:10,
+    fontSize: 18,
     fontWeight: "bold",
   },
   cardCategory: {
-    fontSize: 14,
-    color: "#666",
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#28A745",
   },
   emptyContainer: {
     flex: 1,
