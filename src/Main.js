@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,16 +10,16 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   Alert,
-} from 'react-native';
+} from "react-native";
 
 function CategoryRoute({ savedData, category }) {
   const filteredData =
-    category === '전체' ? savedData : savedData.filter((item) => item.category === category);
+    category === "전체" ? savedData : savedData.filter((item) => item.category === category);
 
   return (
     <FlatList
       data={filteredData}
-      numColumns={2} // 두 개의 열로 갤러리 형식
+      numColumns={2}
       keyExtractor={(item, index) => index.toString()}
       renderItem={({ item }) => (
         <View style={[styles.card, { backgroundColor: getCategoryColor(item.category) }]}>
@@ -39,33 +39,33 @@ function CategoryRoute({ savedData, category }) {
 
 const getCategoryColor = (category) => {
   switch (category) {
-    case '운동':
-      return '#E3F2FD';
-    case '음식점':
-      return '#FFF3E0';
-    case '쇼핑':
-      return '#E8F5E9';
-    case '생활꿀팁':
-      return '#F3E5F5';
-    case '공연,전시':
-      return '#FFEBEE';
+    case "운동":
+      return "#E3F2FD";
+    case "음식점":
+      return "#FFF3E0";
+    case "쇼핑":
+      return "#E8F5E9";
+    case "생활꿀팁":
+      return "#F3E5F5";
+    case "공연,전시":
+      return "#FFEBEE";
     default:
-      return '#FFFFFF';
+      return "#FFFFFF";
   }
 };
 
 export default function MainScreen() {
   const [modalVisible, setModalVisible] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('운동');
+  const [inputText, setInputText] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("운동");
   const [savedData, setSavedData] = useState([]);
-  const [showCategoryList, setShowCategoryList] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const categories = ['운동', '음식점', '쇼핑', '생활꿀팁', '공연,전시'];
+  const categories = ["운동", "음식점", "쇼핑", "생활꿀팁", "공연,전시"];
 
   const handleSave = () => {
     if (!inputText.trim()) {
-      Alert.alert('오류', '내용을 입력해주세요!');
+      Alert.alert("오류", "내용을 입력해주세요!");
       return;
     }
 
@@ -73,8 +73,8 @@ export default function MainScreen() {
       ...savedData,
       { category: selectedCategory, text: inputText, imageUri: null },
     ]);
-    setInputText('');
-    setSelectedCategory('운동');
+    setInputText("");
+    setSelectedCategory("운동");
     setModalVisible(false);
   };
 
@@ -91,7 +91,7 @@ export default function MainScreen() {
 
       {/* 탭 네비게이션 */}
       <FlatList
-        data={['전체', ...categories]}
+        data={["전체", ...categories]}
         horizontal
         keyExtractor={(item) => item}
         renderItem={({ item }) => (
@@ -124,35 +124,37 @@ export default function MainScreen() {
           <View style={styles.modalContainer}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>새로운 정보 추가</Text>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>새로운 정보 추가</Text>
+                  <TouchableOpacity
+                    style={styles.categoryDropdown}
+                    onPress={() => setShowDropdown((prev) => !prev)}
+                  >
+                    <Text style={styles.categoryDropdownText}>{selectedCategory} ▼</Text>
+                  </TouchableOpacity>
+                </View>
+                {showDropdown && (
+                  <View style={styles.dropdownMenu}>
+                    {categories.map((category) => (
+                      <TouchableOpacity
+                        key={category}
+                        style={styles.dropdownMenuItem}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setShowDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownMenuItemText}>{category}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
                 <TextInput
                   style={styles.modalInput}
                   placeholder="내용을 입력하세요"
                   value={inputText}
                   onChangeText={setInputText}
                 />
-                <TouchableOpacity
-                  style={styles.categorySelector}
-                  onPress={() => setShowCategoryList((prev) => !prev)}
-                >
-                  <Text style={styles.categorySelectorText}>{selectedCategory}</Text>
-                </TouchableOpacity>
-                {showCategoryList && (
-                  <View style={styles.categoryList}>
-                    {categories.map((category) => (
-                      <TouchableOpacity
-                        key={category}
-                        style={styles.categoryItem}
-                        onPress={() => {
-                          setSelectedCategory(category);
-                          setShowCategoryList(false);
-                        }}
-                      >
-                        <Text style={styles.categoryItemText}>{category}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
                 <View style={styles.modalButtons}>
                   <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
                     <Text style={styles.modalButtonText}>저장</Text>
@@ -176,12 +178,12 @@ export default function MainScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
     borderRadius: 8,
     paddingHorizontal: 10,
     marginVertical: 10,
@@ -198,131 +200,141 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   tabTextActive: {
-    color: '#28A745',
-    fontWeight: 'bold',
+    color: "#28A745",
+    fontWeight: "bold",
   },
   addButton: {
     height: 50,
-    backgroundColor: '#28A745',
+    backgroundColor: "#28A745",
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     margin: 16,
     marginBottom: 32,
   },
   addButtonText: {
     fontSize: 18,
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    width: '90%',
+    width: "90%",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
-    position: 'relative',
+    position: "relative",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: "bold",
+  },
+  categoryDropdown: {
+    padding: 10,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 8,
+  },
+  categoryDropdownText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    width: 120,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 10,
+    elevation: 5,
+    zIndex: 10,
+  },
+  dropdownMenuItem: {
+    padding: 10,
+    borderBottomColor: "#ddd",
+    borderBottomWidth: 1,
+  },
+  dropdownMenuItemText: {
+    fontSize: 14,
+    color: "#333",
   },
   modalInput: {
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
     height: 50,
-    marginBottom: 20,
-  },
-  categorySelector: {
-    padding: 10,
-    backgroundColor: '#E3F2FD',
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  categorySelectorText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  categoryList: {
-    marginBottom: 20,
-  },
-  categoryItem: {
-    padding: 10,
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    marginVertical: 5,
-  },
-  categoryItemText: {
-    fontSize: 14,
-    color: '#333',
+    marginTop: 20,
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
   },
   modalButtonSave: {
     flex: 1,
-    backgroundColor: '#28A745',
+    backgroundColor: "#28A745",
     borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 5,
     height: 40,
   },
   modalButtonClose: {
     flex: 1,
-    backgroundColor: '#6c757d',
+    backgroundColor: "#6c757d",
     borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     height: 40,
   },
   modalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   card: {
     flex: 1,
     margin: 8,
-    aspectRatio: 1, // 정사각형 비율
+    aspectRatio: 1,
     borderRadius: 8,
     elevation: 2,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   cardImage: {
-    width: '100%',
-    height: '70%', // 이미지 높이를 카드의 70%로
+    width: "100%",
+    height: "70%",
     borderRadius: 8,
     marginBottom: 8,
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cardCategory: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   noDataText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
 });
