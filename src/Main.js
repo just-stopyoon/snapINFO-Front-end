@@ -305,6 +305,33 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  categoryDropdownText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#28A745",
+    marginRight:10,
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 60,
+    right: 0,
+    width: 150,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    elevation: 5,
+    zIndex: 100,
+    padding: 10,
+  },
+  dropdownMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderBottomColor: "#ddd",
+    borderBottomWidth: 1,
+  },
+  dropdownMenuItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
   modalInput: {
     borderColor: "#ddd",
     borderWidth: 1,
