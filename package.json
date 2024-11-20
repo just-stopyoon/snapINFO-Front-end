@@ -28,7 +28,6 @@
     "react-native-screens": "~4.1.0",
     "react-native-tab-view": "^3.5.2",
     "react-pager-view": "^0.1.2",
-    "undici": "^6.21.0",
     "web-streams-polyfill": "^4.0.0"
   },
   "devDependencies": {

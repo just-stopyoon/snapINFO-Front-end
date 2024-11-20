@@ -10,14 +10,38 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   Alert,
+  PermissionsAndroid,
+  Platform,
 } from "react-native";
+import { launchImageLibrary } from "react-native-image-picker";
+
+async function requestGalleryPermission() {
+  if (Platform.OS === "android") {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        {
+          title: "갤러리 접근 권한 요청",
+          message: "사진을 선택하려면 갤러리 접근 권한이 필요합니다.",
+          buttonNeutral: "나중에",
+          buttonNegative: "취소",
+          buttonPositive: "허용",
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      console.warn(err);
+      return false;
+    }
+  }
+  return true;
+}
 
 function CategoryRoute({ savedData, category }) {
   const filteredData =
     category === "전체" ? savedData : savedData.filter((item) => item.category === category);
 
   const placeholderData = [{ key: "placeholder1" }, { key: "placeholder2" }];
-
   const dataToRender =
     filteredData.length === 1 ? [...filteredData, ...placeholderData] : filteredData;
 
@@ -56,6 +80,7 @@ export default function MainScreen() {
   const [inputText, setInputText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("운동");
   const [savedData, setSavedData] = useState([]);
+  const [imageUri, setImageUri] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const categories = ["운동", "음식점", "쇼핑", "생활꿀팁", "공연,전시"];
@@ -68,11 +93,32 @@ export default function MainScreen() {
 
     setSavedData([
       ...savedData,
-      { category: selectedCategory, title: inputTitle, text: inputText, imageUri: null },
+      { category: selectedCategory, title: inputTitle, text: inputText, imageUri: imageUri },
     ]);
     setInputTitle("");
     setInputText("");
+    setImageUri(null);
     setModalVisible(false);
+  };
+
+  const openGallery = async () => {
+    const hasPermission = await requestGalleryPermission();
+    if (!hasPermission) {
+      Alert.alert("권한 오류", "갤러리 접근 권한이 필요합니다.");
+      return;
+    }
+
+    const options = { mediaType: "photo", quality: 1 };
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log("Gallery access cancelled.");
+      } else if (response.errorCode) {
+        console.log("Error:", response.errorMessage);
+      } else {
+        const uri = response.assets[0].uri;
+        setImageUri(uri);
+      }
+    });
   };
 
   return (
@@ -113,7 +159,7 @@ export default function MainScreen() {
 
       {/* 모달 */}
       <Modal
-        transparent={true}
+        transparent
         visible={modalVisible}
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
@@ -158,6 +204,10 @@ export default function MainScreen() {
                   value={inputText}
                   onChangeText={setInputText}
                 />
+                <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
+                  <Text style={styles.galleryButtonText}>사진 선택하기</Text>
+                </TouchableOpacity>
+                {imageUri && <Image source={{ uri: imageUri }} style={styles.previewImage} />}
                 <View style={styles.modalButtons}>
                   <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
                     <Text style={styles.modalButtonText}>저장</Text>
@@ -292,7 +342,11 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
     borderRadius: 10,
-    position: "relative",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   modalTitleInput: {
     fontSize: 18,
@@ -300,16 +354,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
   },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  categoryDropdown: {
+    justifyContent: "center",
     alignItems: "center",
   },
   categoryDropdownText: {
     fontSize: 16,
+    marginRight: 10,
     fontWeight: "bold",
     color: "#28A745",
-    marginRight:10,
   },
   dropdownMenu: {
     position: "absolute",
@@ -337,8 +390,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
-    height: 300,
+    height: 150,
     marginVertical: 10,
+  },
+  galleryButton: {
+    backgroundColor: "#fff",
+    borderRadius: 5,
+    padding: 10,
+    alignItems: "center",
+  },
+  galleryButtonText: {
+    color: "gray",
+    fontWeight: "bold",
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    marginVertical: 10,
+    borderRadius: 10,
   },
   modalButtons: {
     flexDirection: "row",
