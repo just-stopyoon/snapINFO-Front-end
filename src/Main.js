@@ -10,32 +10,8 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   Alert,
-  PermissionsAndroid,
-  Platform,
 } from "react-native";
-import { launchImageLibrary } from "react-native-image-picker";
-
-async function requestGalleryPermission() {
-  if (Platform.OS === "android") {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        {
-          title: "갤러리 접근 권한 요청",
-          message: "사진을 선택하려면 갤러리 접근 권한이 필요합니다.",
-          buttonNeutral: "나중에",
-          buttonNegative: "취소",
-          buttonPositive: "허용",
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
-    }
-  }
-  return true;
-}
+import * as ImagePicker from "expo-image-picker";
 
 function CategoryRoute({ savedData, category }) {
   const filteredData =
@@ -86,8 +62,8 @@ export default function MainScreen() {
   const categories = ["운동", "음식점", "쇼핑", "생활꿀팁", "공연,전시"];
 
   const handleSave = () => {
-    if (!inputTitle.trim() || !inputText.trim()) {
-      Alert.alert("오류", "제목과 내용을 모두 입력해주세요!");
+    if (!inputTitle.trim()) {
+      Alert.alert("오류", "제목을 입력해주세요!");
       return;
     }
 
@@ -102,23 +78,20 @@ export default function MainScreen() {
   };
 
   const openGallery = async () => {
-    const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
       Alert.alert("권한 오류", "갤러리 접근 권한이 필요합니다.");
       return;
     }
 
-    const options = { mediaType: "photo", quality: 1 };
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log("Gallery access cancelled.");
-      } else if (response.errorCode) {
-        console.log("Error:", response.errorMessage);
-      } else {
-        const uri = response.assets[0].uri;
-        setImageUri(uri);
-      }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 1,
     });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
   };
 
   return (
@@ -168,6 +141,7 @@ export default function MainScreen() {
           <View style={styles.modalContainer}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
+                {/* 제목 및 카테고리 */}
                 <View style={styles.modalHeader}>
                   <TextInput
                     style={styles.modalTitleInput}
@@ -198,26 +172,32 @@ export default function MainScreen() {
                     ))}
                   </View>
                 )}
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="내용을 입력하세요"
-                  value={inputText}
-                  onChangeText={setInputText}
-                />
-                <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
-                  <Text style={styles.galleryButtonText}>사진 선택하기</Text>
-                </TouchableOpacity>
-                {imageUri && <Image source={{ uri: imageUri }} style={styles.previewImage} />}
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
-                    <Text style={styles.modalButtonText}>저장</Text>
+
+                {/* 이미지 미리보기 */}
+                <View style={styles.imagePreviewContainer}>
+                  {imageUri ? (
+                    <Image source={{ uri: imageUri }} style={styles.previewImageLarge} />
+                  ) : (
+                    <Text style={styles.noImageText}>사진이 선택되지 않았습니다</Text>
+                  )}
+                </View>
+
+                {/* 하단 버튼 */}
+                <View style={styles.modalButtonsContainer}>
+                  <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
+                    <Text style={styles.galleryButtonText}>사진 선택하기</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalButtonClose}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.modalButtonText}>닫기</Text>
-                  </TouchableOpacity>
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
+                      <Text style={styles.modalButtonText}>정보 추출</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalButtonClose}
+                      onPress={() => setModalVisible(false)}
+                    >
+                      <Text style={styles.modalButtonText}>닫기</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </TouchableWithoutFeedback>
@@ -300,7 +280,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 10,
-    backgroundColor: "#fff",
+    backgroundColor: "#28A745",
     borderRadius: 5,
     paddingHorizontal: 5,
   },
@@ -317,10 +297,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   cardCategory: {
-    marginTop: 3,
-    marginRight: -5,
     fontSize: 15,
-    color: "#28A745",
+    margin:3,
+    fontWeight: "bold",
+    color: "#fff",
   },
   emptyContainer: {
     flex: 1,
@@ -342,11 +322,13 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
     borderRadius: 10,
+    alignItems: "center",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    width: "100%",
   },
   modalTitleInput: {
     fontSize: 18,
@@ -385,34 +367,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  modalInput: {
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    height: 150,
-    marginVertical: 10,
+  imagePreviewContainer: {
+    width: "100%",
+    height: 250,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  previewImageLarge: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10,
+    resizeMode: "contain",
+  },
+  noImageText: {
+    fontSize: 16,
+    color: "#999",
+  },
+  modalButtonsContainer: {
+    width: "100%",
+    alignItems: "center",
   },
   galleryButton: {
-    backgroundColor: "#fff",
     borderRadius: 5,
-    padding: 10,
-    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 15,
   },
   galleryButtonText: {
     color: "gray",
     fontWeight: "bold",
   },
-  previewImage: {
-    width: 100,
-    height: 100,
-    marginVertical: 10,
-    borderRadius: 10,
-  },
-  modalButtons: {
+  actionButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    width: "100%",
   },
   modalButtonSave: {
     flex: 1,

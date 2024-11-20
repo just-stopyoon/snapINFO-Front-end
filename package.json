@@ -28,7 +28,8 @@
     "react-native-screens": "~4.1.0",
     "react-native-tab-view": "^3.5.2",
     "react-pager-view": "^0.1.2",
-    "web-streams-polyfill": "^4.0.0"
+    "web-streams-polyfill": "^4.0.0",
+    "expo-image-picker": "~16.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
