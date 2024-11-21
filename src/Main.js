@@ -9,6 +9,8 @@ import {
   Modal,
   FlatList,
   Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 
@@ -131,62 +133,64 @@ export default function MainScreen() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {/* 제목 입력란 */}
-            <View style={styles.modalHeader}>
-              <TextInput
-                style={styles.modalTitleInput}
-                placeholder="제목을 입력하세요"
-                value={inputTitle}
-                onChangeText={setInputTitle}
-              />
-              {/* 카테고리 선택 */}
-              <TouchableOpacity
-                style={styles.categoryDropdown}
-                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
-              >
-                <Text style={styles.categoryDropdownText}>{selectedCategory} ▼</Text>
-              </TouchableOpacity>
-            </View>
-            {showCategoryDropdown && (
-              <View style={styles.dropdownMenu}>
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    style={styles.dropdownMenuItem}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setShowCategoryDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownMenuItemText}>{category}</Text>
-                  </TouchableOpacity>
-                ))}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              {/* 제목 입력란 */}
+              <View style={styles.modalHeader}>
+                <TextInput
+                  style={styles.modalTitleInput}
+                  placeholder="제목을 입력하세요"
+                  value={inputTitle}
+                  onChangeText={setInputTitle}
+                />
+                {/* 카테고리 선택 */}
+                <TouchableOpacity
+                  style={styles.categoryDropdown}
+                  onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                >
+                  <Text style={styles.categoryDropdownText}>{selectedCategory} ▼</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            {/* 이미지 선택 */}
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.previewImageLarge} />
-            ) : (
-              <Text style={styles.noImageText}>사진이 선택되지 않았습니다</Text>
-            )}
-            <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
-              <Text style={styles.galleryButtonText}>사진 선택하기</Text>
-            </TouchableOpacity>
-            <View style={styles.modalButtonsContainer}>
-              <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
-                <Text style={styles.modalButtonText}>정보 추출</Text>
+              {showCategoryDropdown && (
+                <View style={styles.dropdownMenu}>
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={styles.dropdownMenuItem}
+                      onPress={() => {
+                        setSelectedCategory(category);
+                        setShowCategoryDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownMenuItemText}>{category}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {/* 이미지 선택 */}
+              {imageUri ? (
+                <Image source={{ uri: imageUri }} style={styles.previewImageLarge} />
+              ) : (
+                <Text style={styles.noImageText}>사진이 선택되지 않았습니다</Text>
+              )}
+              <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
+                <Text style={styles.galleryButtonText}>사진 선택하기</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalButtonClose}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.modalButtonText}>취소</Text>
-              </TouchableOpacity>
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
+                  <Text style={styles.modalButtonText}>정보 추출</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButtonClose}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>취소</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* 상세 모달 */}
@@ -196,35 +200,42 @@ export default function MainScreen() {
         animationType="fade"
         onRequestClose={() => setDetailModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {selectedItem && (
-              <>
-                <Text style={styles.modalTitle}>{selectedItem.title}</Text>
-                {selectedItem.imageUri && (
-                  <Image source={{ uri: selectedItem.imageUri }} style={styles.previewImageLarge} />
+        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                {selectedItem && (
+                  <>
+                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
+                    {selectedItem.imageUri && (
+                      <Image
+                        source={{ uri: selectedItem.imageUri }}
+                        style={styles.previewImageLarge}
+                      />
+                    )}
+                    <View style={styles.modalButtonsContainer}>
+                      <TouchableOpacity
+                        style={styles.modalButtonFix}
+                        onPress={() => Alert.alert("수정", "수정 기능 구현 예정!")}
+                      >
+                        <Text style={styles.modalButtonText}>내용 수정</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.modalButtonDelete}
+                        onPress={() => {
+                          setSavedData(savedData.filter((data) => data !== selectedItem));
+                          setDetailModalVisible(false);
+                        }}
+                      >
+                        <Text style={styles.modalButtonText}>정보 삭제</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
                 )}
-                <View style={styles.modalButtonsContainer}>
-                  <TouchableOpacity
-                    style={styles.modalButtonFix}
-                    onPress={() => Alert.alert("수정", "수정 기능 구현 예정!")}
-                  >
-                    <Text style={styles.modalButtonText}>내용 수정</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalButtonDelete}
-                    onPress={() => {
-                      setSavedData(savedData.filter((data) => data !== selectedItem));
-                      setDetailModalVisible(false);
-                    }}
-                  >
-                    <Text style={styles.modalButtonText}>정보 삭제</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -266,12 +277,6 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: "#28A745",
     fontWeight: "bold",
-  },
-  noDataText: {
-    color: "gray",
-    fontweight: 'light',
-    fontSize: 15,
-    //justifyContent: "center",
   },
   addButton: {
     height: 60,
@@ -347,8 +352,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: "bold",
-    //borderBottomWidth: 1,
-    //borderBottomColor: "#ccc",
     marginRight: 10,
   },
   previewImageLarge: {
@@ -383,7 +386,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginBottom : 10,
+    marginBottom: 10,
   },
   modalButtonFix: {
     flex: 1,
@@ -415,7 +418,6 @@ const styles = StyleSheet.create({
   },
   galleryButton: {
     marginBottom: 5,
-    //backgroundColor: "#e0e0e0",
     padding: 10,
     borderRadius: 8,
   },
