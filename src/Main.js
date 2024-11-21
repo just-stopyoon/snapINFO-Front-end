@@ -67,6 +67,8 @@ export default function MainScreen() {
 
       setSavedData([...savedData, newItem]); // 저장된 데이터 업데이트
       Alert.alert("성공", "텍스트 추출이 완료되었습니다!");
+      setSelectedItem(newItem); // 상세 모달에 표시할 데이터 설정
+      setDetailModalVisible(true); // 상세 모달 열기
       setModalVisible(false);
       setInputTitle("");
       setImageUri(null);
@@ -245,7 +247,6 @@ export default function MainScreen() {
                 </View>
               </View>
 
-
               {/* 이미지 선택 */}
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={styles.previewImageLarge} />
@@ -267,6 +268,53 @@ export default function MainScreen() {
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* 상세 모달 */}
+      <Modal
+        transparent
+        visible={detailModalVisible}
+        animationType="fade"
+        onRequestClose={() => setDetailModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                {selectedItem && (
+                  <>
+                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
+                    {selectedItem.imageUri && (
+                      <Image
+                        source={{ uri: selectedItem.imageUri }}
+                        style={styles.previewImageLarge}
+                      />
+                    )}
+                    {selectedItem.extractedText && (
+                      <Text style={styles.extractedText}>
+                        {selectedItem.extractedText}
+                      </Text>
+                    )}
+                    <View style={styles.modalButtonsContainer}>
+                      <TouchableOpacity
+                        style={styles.modalButtonFix}
+                        onPress={() => Alert.alert("수정", "수정 기능 준비 중!")}
+                      >
+                        <Text style={styles.modalButtonText}>정보 수정</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.modalButtonDelete}
+                        onPress={handleDelete}
+                      >
+                        <Text style={styles.modalButtonText}>정보 삭제</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -563,5 +611,11 @@ const styles = StyleSheet.create({
   activeCategoryText: {
     color: "#FFF",
   },
-  
+  extractedText: {
+    fontSize: 16,
+    color: "#333",
+    marginVertical: 10,
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
 });
