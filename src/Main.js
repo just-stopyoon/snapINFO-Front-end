@@ -33,6 +33,11 @@ export default function MainScreen() {
       return;
     }
 
+    if (!imageUri) {
+      Alert.alert("오류", "사진을 선택해주세요!");
+      return;
+    }
+
     const newItem = {
       category: selectedCategory,
       title: inputTitle,
@@ -63,6 +68,12 @@ export default function MainScreen() {
     }
   };
 
+  // 필터링된 데이터
+  const filteredData =
+    selectedCategory === "전체"
+      ? savedData
+      : savedData.filter((item) => item.category === selectedCategory);
+
   return (
     <View style={styles.container}>
       {/* 검색 바 */}
@@ -85,7 +96,12 @@ export default function MainScreen() {
             style={styles.tabItem}
             onPress={() => setSelectedCategory(item)}
           >
-            <Text style={[styles.tabText, selectedCategory === item && styles.tabTextActive]}>
+            <Text
+              style={[
+                styles.tabText,
+                selectedCategory === item && styles.tabTextActive,
+              ]}
+            >
               {item}
             </Text>
           </TouchableOpacity>
@@ -94,35 +110,49 @@ export default function MainScreen() {
 
       {/* 갤러리 */}
       <FlatList
-        data={savedData}
+        data={
+          filteredData.length % 2 === 0
+            ? filteredData
+            : [...filteredData, { isPlaceholder: true }]
+        }
         numColumns={2}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => {
-              setSelectedItem(item);
-              setDetailModalVisible(true);
-            }}
-          >
-            {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.cardImage} />}
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardCategory}>{item.category}</Text>
-            </View>
-            <Text style={styles.cardTitle} numberOfLines={1}>
-              {item.title}
-            </Text>
-          </TouchableOpacity>
-        )}
+        contentContainerStyle={styles.galleryContainer}
+        renderItem={({ item }) =>
+          item.isPlaceholder ? (
+            <View style={styles.cardPlaceholder} />
+          ) : (
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() => {
+                setSelectedItem(item);
+                setDetailModalVisible(true);
+              }}
+            >
+              {item.imageUri && (
+                <Image source={{ uri: item.imageUri }} style={styles.cardImage} />
+              )}
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardCategory}>{item.category}</Text>
+              </View>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+          )
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.noDataText}>'사진 등록하기' 버튼을 통해 정보를 추출하세요.</Text>
+            <Text style={styles.noDataText}>'사진 등록하기' 버튼을 통해 정보를 추가하세요.</Text>
           </View>
         }
       />
 
       {/* 사진 등록 버튼 */}
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setModalVisible(true)}
+      >
         <Text style={styles.addButtonText}>사진 등록하기</Text>
       </TouchableOpacity>
 
@@ -179,7 +209,7 @@ export default function MainScreen() {
               </TouchableOpacity>
               <View style={styles.modalButtonsContainer}>
                 <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
-                  <Text style={styles.modalButtonText}>정보 추출</Text>
+                  <Text style={styles.modalButtonText}>등록하기</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalButtonClose}
@@ -192,54 +222,10 @@ export default function MainScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
-      {/* 상세 모달 */}
-      <Modal
-        transparent
-        visible={detailModalVisible}
-        animationType="fade"
-        onRequestClose={() => setDetailModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                {selectedItem && (
-                  <>
-                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
-                    {selectedItem.imageUri && (
-                      <Image
-                        source={{ uri: selectedItem.imageUri }}
-                        style={styles.previewImageLarge}
-                      />
-                    )}
-                    <View style={styles.modalButtonsContainer}>
-                      <TouchableOpacity
-                        style={styles.modalButtonFix}
-                        onPress={() => Alert.alert("수정", "수정 기능 구현 예정!")}
-                      >
-                        <Text style={styles.modalButtonText}>내용 수정</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.modalButtonDelete}
-                        onPress={() => {
-                          setSavedData(savedData.filter((data) => data !== selectedItem));
-                          setDetailModalVisible(false);
-                        }}
-                      >
-                        <Text style={styles.modalButtonText}>정보 삭제</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -262,12 +248,15 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    height: 50,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    height: 40,
     paddingHorizontal: 10,
+    marginBottom: 5, // 필터와 갤러리 간 간격
+    backgroundColor: "#fff",
   },
   tabItem: {
-    paddingVertical: 10,
+    paddingVertical: 5,
     paddingHorizontal: 10,
   },
   tabText: {
@@ -277,6 +266,12 @@ const styles = StyleSheet.create({
   tabTextActive: {
     color: "#28A745",
     fontWeight: "bold",
+  },
+  galleryContainer: {
+    paddingHorizontal: 10, // 좌우 여백
+    marginTop: 0, // 카테고리 필터 바로 아래에 갤러리 배치
+    alignItems: "stretch",
+    justifyContent: "flex-start",
   },
   addButton: {
     height: 60,
@@ -317,6 +312,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 5,
   },
+  cardPlaceholder: {
+    flex: 1,
+    margin: 8,
+    aspectRatio: 1,
+    borderRadius: 10,
+    backgroundColor: "transparent",
+  },
   cardTitle: {
     marginTop: 10,
     fontSize: 18,
@@ -328,6 +330,15 @@ const styles = StyleSheet.create({
     margin: 3,
     fontWeight: "bold",
     color: "#fff",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noDataText: {
+    fontSize: 16,
+    color: "#666",
   },
   modalContainer: {
     flex: 1,
@@ -383,29 +394,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     height: 40,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  modalButtonFix: {
-    flex: 1,
-    backgroundColor: "#28A745",
-    borderRadius: 5,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 5,
-    height: 40,
-  },
-  modalButtonDelete: {
-    flex: 1,
-    backgroundColor: "#FF6F00",
-    borderRadius: 5,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 5,
-    height: 40,
-  },
   modalButtonText: {
     color: "#fff",
     fontWeight: "bold",
@@ -413,8 +401,7 @@ const styles = StyleSheet.create({
   noImageText: {
     fontSize: 16,
     color: "#999",
-    marginBottom: 100,
-    marginTop: 100,
+    marginVertical: 50,
   },
   galleryButton: {
     marginBottom: 5,
