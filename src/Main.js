@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import axios from "axios";
 
 export default function MainScreen() {
   const [modalVisible, setModalVisible] = useState(false); // 사진 등록 모달 상태
@@ -26,8 +27,8 @@ export default function MainScreen() {
 
   const categories = ["운동", "음식점", "쇼핑", "생활꿀팁", "공연,전시"];
 
-  // 저장 버튼 클릭 시 동작
-  const handleSave = () => {
+  // 정보 추출 버튼 클릭 시 동작
+  const handleExtract = async () => {
     if (!inputTitle.trim()) {
       Alert.alert("오류", "제목을 입력해주세요!");
       return;
@@ -38,16 +39,41 @@ export default function MainScreen() {
       return;
     }
 
-    const newItem = {
-      category: selectedCategory,
-      title: inputTitle,
-      imageUri: imageUri,
-    };
+    const formData = new FormData();
+    formData.append("file", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: "uploaded_image.jpg",
+    });
 
-    setSavedData([...savedData, newItem]); // 기존 데이터에 새 항목 추가
-    setInputTitle("");
-    setImageUri(null);
-    setModalVisible(false); // 모달 닫기
+    try {
+      const response = await axios.post(
+        "https://port-0-back-end-am952nlsys9dvi.sel5.cloudtype.app/model",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      const extractedText = response.data.text; // 백엔드에서 반환된 텍스트
+      const newItem = {
+        category: selectedCategory,
+        title: inputTitle,
+        imageUri: imageUri,
+        extractedText: extractedText, // 추출된 텍스트 저장
+      };
+
+      setSavedData([...savedData, newItem]); // 저장된 데이터 업데이트
+      Alert.alert("성공", "텍스트 추출이 완료되었습니다!");
+      setModalVisible(false);
+      setInputTitle("");
+      setImageUri(null);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("오류", "텍스트 추출 중 문제가 발생했습니다.");
+    }
   };
 
   // 갤러리에서 이미지 선택
@@ -68,12 +94,6 @@ export default function MainScreen() {
     }
   };
 
-  // 필터링된 데이터
-  const filteredData =
-    selectedCategory === "전체"
-      ? savedData
-      : savedData.filter((item) => item.category === selectedCategory);
-
   // 데이터 삭제
   const handleDelete = () => {
     if (selectedItem) {
@@ -82,6 +102,12 @@ export default function MainScreen() {
       setDetailModalVisible(false); // 상세 모달 닫기
     }
   };
+
+  // 필터링된 데이터
+  const filteredData =
+    selectedCategory === "전체"
+      ? savedData
+      : savedData.filter((item) => item.category === selectedCategory);
 
   return (
     <View style={styles.container}>
@@ -175,7 +201,7 @@ export default function MainScreen() {
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              {/* 제목 입력란 */}
+              {/* 제목 입력란과 카테고리 선택 */}
               <View style={styles.modalHeader}>
                 <TextInput
                   style={styles.modalTitleInput}
@@ -183,30 +209,43 @@ export default function MainScreen() {
                   value={inputTitle}
                   onChangeText={setInputTitle}
                 />
-                {/* 카테고리 선택 */}
-                <TouchableOpacity
-                  style={styles.categoryDropdown}
-                  onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                >
-                  <Text style={styles.categoryDropdownText}>{selectedCategory} ▼</Text>
-                </TouchableOpacity>
-              </View>
-              {showCategoryDropdown && (
-                <View style={styles.dropdownMenu}>
-                  {categories.map((category) => (
-                    <TouchableOpacity
-                      key={category}
-                      style={styles.dropdownMenuItem}
-                      onPress={() => {
-                        setSelectedCategory(category);
-                        setShowCategoryDropdown(false);
-                      }}
-                    >
-                      <Text style={styles.dropdownMenuItemText}>{category}</Text>
-                    </TouchableOpacity>
-                  ))}
+                <View style={styles.categoryDropdownContainer}>
+                  <TouchableOpacity
+                    style={styles.selectedCategoryContainer}
+                    onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                  >
+                    <Text style={styles.selectedCategoryText}>{selectedCategory} ▼</Text>
+                  </TouchableOpacity>
+                  {showCategoryDropdown && (
+                    <View style={styles.categoryDropdown}>
+                      {categories.map((category) => (
+                        <TouchableOpacity
+                          key={category}
+                          style={[
+                            styles.categoryOption,
+                            selectedCategory === category && styles.activeCategory,
+                          ]}
+                          onPress={() => {
+                            setSelectedCategory(category);
+                            setShowCategoryDropdown(false);
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.categoryOptionText,
+                              selectedCategory === category && styles.activeCategoryText,
+                            ]}
+                          >
+                            {category}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              )}
+              </View>
+
+
               {/* 이미지 선택 */}
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={styles.previewImageLarge} />
@@ -217,8 +256,8 @@ export default function MainScreen() {
                 <Text style={styles.galleryButtonText}>사진 선택하기</Text>
               </TouchableOpacity>
               <View style={styles.modalButtonsContainer}>
-                <TouchableOpacity style={styles.modalButtonSave} onPress={handleSave}>
-                  <Text style={styles.modalButtonText}>등록하기</Text>
+                <TouchableOpacity style={styles.modalButtonSave} onPress={handleExtract}>
+                  <Text style={styles.modalButtonText}>정보 추출</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalButtonClose}
@@ -228,48 +267,6 @@ export default function MainScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {/* 상세 모달 */}
-      <Modal
-        transparent
-        visible={detailModalVisible}
-        animationType="fade"
-        onRequestClose={() => setDetailModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                {selectedItem && (
-                  <>
-                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
-                    {selectedItem.imageUri && (
-                      <Image
-                        source={{ uri: selectedItem.imageUri }}
-                        style={styles.previewImageLarge}
-                      />
-                    )}
-                    <View style={styles.modalButtonsContainer}>
-                      <TouchableOpacity
-                        style={styles.modalButtonFix}
-                        onPress={() => Alert.alert("수정", "수정 기능 준비 중!")}
-                      >
-                        <Text style={styles.modalButtonText}>정보 수정</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.modalButtonDelete}
-                        onPress={handleDelete}
-                      >
-                        <Text style={styles.modalButtonText}>정보 삭제</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -500,19 +497,71 @@ const styles = StyleSheet.create({
     color: "#28A745",
   },
   dropdownMenu: {
-    width: "100%",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    color: "lightgray",
+    width: 100,
     backgroundColor: "#fff",
     borderRadius: 5,
-    elevation: 5,
-    marginVertical: 5,
+    levation: 5,
+    marginVertical: 3,
   },
   dropdownMenuItem: {
-    padding: 10,
+    padding: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
   },
   dropdownMenuItemText: {
+    fontSize: 13,
+    color: "gray",
+  },
+  categoryContainer: {
+    marginVertical: 12,
+    alignItems: "center",
+    position: "relative",
+  },
+  selectedCategoryContainer: {
+    backgroundColor: "#E6F4EA",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectedCategoryText: {
     fontSize: 16,
+    fontWeight: "bold",
+    color: "#28A745",
+  },
+  categoryDropdown: {
+    backgroundColor: "#FFFFFF",
+    position: "absolute",
+    top: 50,
+    zIndex: 1000,
+    borderRadius: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    width: 80,
+    padding: 10,
+  },
+  categoryOption: {
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  categoryOptionText: {
+    fontSize: 13,
     color: "#333",
   },
+  activeCategory: {
+    backgroundColor: "#28A745",
+    borderRadius: 10,
+  },
+  activeCategoryText: {
+    color: "#FFF",
+  },
+  
 });

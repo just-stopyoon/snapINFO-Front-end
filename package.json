@@ -15,9 +15,11 @@
     "@react-navigation/material-top-tabs": "^6.6.14",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
+    "axios": "^1.7.7",
     "expo": "^52.0.8",
     "expo-app-loading": "^2.1.1",
     "expo-font": "~13.0.1",
+    "expo-image-picker": "~16.0.2",
     "expo-splash-screen": "~0.29.11",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
@@ -28,8 +30,7 @@
     "react-native-screens": "~4.1.0",
     "react-native-tab-view": "^3.5.2",
     "react-pager-view": "^0.1.2",
-    "web-streams-polyfill": "^4.0.0",
-    "expo-image-picker": "~16.0.2"
+    "web-streams-polyfill": "^4.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
