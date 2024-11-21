@@ -74,6 +74,15 @@ export default function MainScreen() {
       ? savedData
       : savedData.filter((item) => item.category === selectedCategory);
 
+  // 데이터 삭제
+  const handleDelete = () => {
+    if (selectedItem) {
+      setSavedData(savedData.filter((item) => item !== selectedItem));
+      setSelectedItem(null);
+      setDetailModalVisible(false); // 상세 모달 닫기
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* 검색 바 */}
@@ -222,6 +231,48 @@ export default function MainScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* 상세 모달 */}
+      <Modal
+        transparent
+        visible={detailModalVisible}
+        animationType="fade"
+        onRequestClose={() => setDetailModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
+          <View style={styles.modalContainer}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                {selectedItem && (
+                  <>
+                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
+                    {selectedItem.imageUri && (
+                      <Image
+                        source={{ uri: selectedItem.imageUri }}
+                        style={styles.previewImageLarge}
+                      />
+                    )}
+                    <View style={styles.modalButtonsContainer}>
+                      <TouchableOpacity
+                        style={styles.modalButtonFix}
+                        onPress={() => Alert.alert("수정", "수정 기능 준비 중!")}
+                      >
+                        <Text style={styles.modalButtonText}>정보 수정</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.modalButtonDelete}
+                        onPress={handleDelete}
+                      >
+                        <Text style={styles.modalButtonText}>정보 삭제</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -269,9 +320,10 @@ const styles = StyleSheet.create({
   },
   galleryContainer: {
     paddingHorizontal: 10, // 좌우 여백
-    marginTop: 0, // 카테고리 필터 바로 아래에 갤러리 배치
+    marginTop: 10, // 카테고리 필터 바로 아래에 갤러리 배치
     alignItems: "stretch",
     justifyContent: "flex-start",
+    height: 550,
   },
   addButton: {
     height: 60,
@@ -301,7 +353,8 @@ const styles = StyleSheet.create({
   cardImage: {
     width: "100%",
     height: "70%",
-    borderRadius: 10,
+    borderTopLeftRadius: 10, 
+    borderTopRightRadius: 10,
     marginBottom: 8,
   },
   cardHeader: {
@@ -359,6 +412,11 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 15,
   },
+  modalTitle:{
+    fontSize:20,
+    fontWeight: "bold",
+    marginBottom:10,
+  },
   modalTitleInput: {
     flex: 1,
     fontSize: 20,
@@ -379,7 +437,7 @@ const styles = StyleSheet.create({
   modalButtonSave: {
     flex: 1,
     backgroundColor: "#28A745",
-    borderRadius: 5,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 5,
@@ -388,10 +446,29 @@ const styles = StyleSheet.create({
   modalButtonClose: {
     flex: 1,
     backgroundColor: "#6c757d",
-    borderRadius: 5,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 5,
+    height: 40,
+  },
+  modalButtonFix: { //상세 모달
+    flex: 1,
+    backgroundColor: "#28A745",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 2,
+    //marginRight: 3,
+    height: 40,
+  },
+  modalButtonDelete: { //상세 모달
+    flex: 1,
+    backgroundColor: "#FF6F00",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 2,
     height: 40,
   },
   modalButtonText: {
