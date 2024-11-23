@@ -48,7 +48,7 @@ export default function MainScreen() {
 
     try {
       const response = await axios.post(
-        "https://port-0-back-end-am952nlsys9dvi.sel5.cloudtype.app/model",
+        "http://54.252.214.233:5000/model",
         formData,
         {
           headers: {
