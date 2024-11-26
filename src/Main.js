@@ -48,11 +48,7 @@ export default function MainScreen() {
   
     try {
       const response = await axios.post(
-<<<<<<< HEAD
         "http://3.104.223.7:5000/model",
-=======
-        "http://54.252.214.233:5000/model",
->>>>>>> 5f0372a666ef82d1e9eb09bba7c45a15bffde6bb
         formData,
         {
           headers: {
