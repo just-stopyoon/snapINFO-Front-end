@@ -33,22 +33,22 @@ export default function MainScreen() {
       Alert.alert("오류", "제목을 입력해주세요!");
       return;
     }
-
+  
     if (!imageUri) {
       Alert.alert("오류", "사진을 선택해주세요!");
       return;
     }
-
+  
     const formData = new FormData();
     formData.append("file", {
       uri: imageUri,
       type: "image/jpeg",
       name: "uploaded_image.jpg",
     });
-
+  
     try {
       const response = await axios.post(
-        "https://port-0-back-end-am952nlsys9dvi.sel5.cloudtype.app/model",
+        "http://3.104.223.7:5000/model",
         formData,
         {
           headers: {
@@ -56,7 +56,7 @@ export default function MainScreen() {
           },
         }
       );
-
+  
       const extractedText = response.data.text; // 백엔드에서 반환된 텍스트
       const newItem = {
         category: selectedCategory,
@@ -64,9 +64,8 @@ export default function MainScreen() {
         imageUri: imageUri,
         extractedText: extractedText, // 추출된 텍스트 저장
       };
-
+  
       setSavedData([...savedData, newItem]); // 저장된 데이터 업데이트
-      Alert.alert("성공", "텍스트 추출이 완료되었습니다!");
       setSelectedItem(newItem); // 상세 모달에 표시할 데이터 설정
       setDetailModalVisible(true); // 상세 모달 열기
       setModalVisible(false);
@@ -76,9 +75,10 @@ export default function MainScreen() {
       console.error(error);
       Alert.alert("오류", "텍스트 추출 중 문제가 발생했습니다.");
     }
-  };
+  };  
 
   // 갤러리에서 이미지 선택
+  // 갤러리에서 이미지 선택 및 크롭
   const openGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -88,13 +88,16 @@ export default function MainScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      allowsEditing: true, // 드래그 가능한 크롭 활성화
+      aspect: [1, 1], // 1:1 비율로 고정 (필요에 따라 변경 가능)
+      quality: 1, // 이미지 품질
     });
 
     if (!result.canceled && result.assets.length > 0) {
       setImageUri(result.assets[0].uri); // 선택된 이미지 경로 저장
     }
   };
+
 
   // 데이터 삭제
   const handleDelete = () => {
@@ -272,51 +275,42 @@ export default function MainScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* 상세 모달 */}
+     {/* 상세 모달 */}
       <Modal
         transparent
         visible={detailModalVisible}
         animationType="fade"
         onRequestClose={() => setDetailModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setDetailModalVisible(false)}>
-          <View style={styles.modalContainer}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                {selectedItem && (
-                  <>
-                    <Text style={styles.modalTitle}>{selectedItem.title}</Text>
-                    {selectedItem.imageUri && (
-                      <Image
-                        source={{ uri: selectedItem.imageUri }}
-                        style={styles.previewImageLarge}
-                      />
-                    )}
-                    {selectedItem.extractedText && (
-                      <Text style={styles.extractedText}>
-                        {selectedItem.extractedText}
-                      </Text>
-                    )}
-                    <View style={styles.modalButtonsContainer}>
-                      <TouchableOpacity
-                        style={styles.modalButtonFix}
-                        onPress={() => Alert.alert("수정", "수정 기능 준비 중!")}
-                      >
-                        <Text style={styles.modalButtonText}>정보 수정</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.modalButtonDelete}
-                        onPress={handleDelete}
-                      >
-                        <Text style={styles.modalButtonText}>정보 삭제</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                )}
-              </View>
-            </TouchableWithoutFeedback>
+        <View style={styles.modalOverlay}>
+          <View style={styles.customModalContainer}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setDetailModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✖</Text>
+            </TouchableOpacity>
+
+            {selectedItem && (
+              <>
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: selectedItem.imageUri }}
+                    style={styles.modalImage}
+                  />
+                  <Text style={styles.dateText}>2024.09.02</Text>
+                </View>
+                <Text style={styles.modalTitle}>{selectedItem.title}</Text>
+                <View style={styles.textContent}>
+                  <Text style={styles.modalText}>{selectedItem.extractedText}</Text>
+                </View>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.actionButtonText}>추가 작업</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
-        </TouchableWithoutFeedback>
+        </View>
       </Modal>
     </View>
   );
@@ -618,4 +612,95 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 10,
   },
+  extractedText: {
+    fontSize: 16,
+    color: "#333",
+    marginVertical: 10,
+    textAlign: "left",
+    paddingHorizontal: 10,
+    lineHeight: 24, // 가독성을 위한 줄 간격
+  },
+  textContainer: {
+    marginTop: 10,
+    backgroundColor: "#F9F9F9",
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  customModalContainer: {
+    width: "90%",
+    backgroundColor: "#1C1C1E",
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+  },
+  closeButton: {
+    alignSelf: "flex-end",
+    marginBottom: 10,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#FFF",
+  },
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 1.5,
+    borderRadius: 15,
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: 20,
+  },
+  modalImage: {
+    width: "100%",
+    height: "100%",
+  },
+  dateText: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    color: "#FFF",
+    fontSize: 12,
+    borderRadius: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  modalTitle: {
+    fontSize: 22,
+    color: "#FFD700",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  textContent: {
+    backgroundColor: "#2C2C2E",
+    borderRadius: 10,
+    padding: 15,
+    marginVertical: 15,
+    width: "100%",
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#EAEAEA",
+    lineHeight: 24,
+    textAlign: "left",
+  },
+  actionButton: {
+    backgroundColor: "#FF6F61",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+  actionButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },  
 });
