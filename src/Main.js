@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
   TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
@@ -46,38 +47,43 @@ export default function MainScreen() {
       name: "uploaded_image.jpg",
     });
   
-    try {
-      const response = await axios.post(
-        "http://3.104.223.7:5000/model",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+    let isCancelled = false;
   
-      const extractedText = response.data.text; // 백엔드에서 반환된 텍스트
+    try {
+      const response = await axios.post("http://3.104.223.7:5000/model", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+  
+      if (isCancelled) return; // 중단 시 실행 중단
+  
+      const extractedText = response.data.text;
       const newItem = {
+        id: Date.now().toString(),
         category: selectedCategory,
         title: inputTitle,
         imageUri: imageUri,
-        extractedText: extractedText, // 추출된 텍스트 저장
+        extractedText: extractedText,
       };
   
-      setSavedData([...savedData, newItem]); // 저장된 데이터 업데이트
-      setSelectedItem(newItem); // 상세 모달에 표시할 데이터 설정
-      setDetailModalVisible(true); // 상세 모달 열기
+      setSavedData((prevData) => [...prevData, newItem]);
+      setSelectedItem(newItem);
+      setDetailModalVisible(true);
       setModalVisible(false);
       setInputTitle("");
       setImageUri(null);
     } catch (error) {
-      console.error(error);
-      Alert.alert("오류", "텍스트 추출 중 문제가 발생했습니다.");
+      if (!isCancelled) {
+        console.error(error);
+        Alert.alert("오류", "텍스트 추출 중 문제가 발생했습니다.");
+      }
     }
-  };  
+  
+    return () => {
+      isCancelled = true;
+    };
+  };
+  
 
-  // 갤러리에서 이미지 선택
   // 갤러리에서 이미지 선택 및 크롭
   const openGallery = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -88,23 +94,22 @@ export default function MainScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, // 드래그 가능한 크롭 활성화
-      aspect: [1, 1], // 1:1 비율로 고정 (필요에 따라 변경 가능)
-      quality: 1, // 이미지 품질
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setImageUri(result.assets[0].uri); // 선택된 이미지 경로 저장
+      setImageUri(result.assets[0].uri);
     }
   };
-
 
   // 데이터 삭제
   const handleDelete = () => {
     if (selectedItem) {
-      setSavedData(savedData.filter((item) => item !== selectedItem));
+      setSavedData((prevData) => prevData.filter((item) => item.id !== selectedItem.id));
       setSelectedItem(null);
-      setDetailModalVisible(false); // 상세 모달 닫기
+      setDetailModalVisible(false);
     }
   };
 
@@ -113,6 +118,39 @@ export default function MainScreen() {
     selectedCategory === "전체"
       ? savedData
       : savedData.filter((item) => item.category === selectedCategory);
+
+  // placeholder 추가
+  const dataWithPlaceholders =
+    filteredData.length % 2 === 0
+      ? filteredData
+      : [...filteredData, { isPlaceholder: true, id: `placeholder-${Date.now()}` }];
+
+  // renderItem 함수
+  const renderItem = useCallback(({ item }) => {
+    if (item.isPlaceholder) {
+      return <View style={styles.cardPlaceholder} />;
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => {
+          setSelectedItem(item);
+          setDetailModalVisible(true);
+        }}
+      >
+        {item.imageUri && (
+          <Image source={{ uri: item.imageUri }} style={styles.cardImage} />
+        )}
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardCategory}>{item.category}</Text>
+        </View>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -150,40 +188,20 @@ export default function MainScreen() {
 
       {/* 갤러리 */}
       <FlatList
-        data={
-          filteredData.length % 2 === 0
-            ? filteredData
-            : [...filteredData, { isPlaceholder: true }]
-        }
+        data={dataWithPlaceholders}
         numColumns={2}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(item) => item.id || String(item.index)}
+        renderItem={renderItem}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         contentContainerStyle={styles.galleryContainer}
-        renderItem={({ item }) =>
-          item.isPlaceholder ? (
-            <View style={styles.cardPlaceholder} />
-          ) : (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => {
-                setSelectedItem(item);
-                setDetailModalVisible(true);
-              }}
-            >
-              {item.imageUri && (
-                <Image source={{ uri: item.imageUri }} style={styles.cardImage} />
-              )}
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardCategory}>{item.category}</Text>
-              </View>
-              <Text style={styles.cardTitle} numberOfLines={1}>
-                {item.title}
-              </Text>
-            </TouchableOpacity>
-          )
-        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.noDataText}>'사진 등록하기' 버튼을 통해 정보를 추가하세요.</Text>
+            <Text style={styles.noDataText}>
+              '사진 등록하기' 버튼을 통해 정보를 추가하세요.
+            </Text>
           </View>
         }
       />
@@ -208,18 +226,23 @@ export default function MainScreen() {
             <View style={styles.modalContent}>
               {/* 제목 입력란과 카테고리 선택 */}
               <View style={styles.modalHeader}>
+                {/* 제목 입력란 */}
                 <TextInput
                   style={styles.modalTitleInput}
                   placeholder="제목을 입력하세요"
                   value={inputTitle}
                   onChangeText={setInputTitle}
                 />
+
+                {/* 카테고리 드롭다운 */}
                 <View style={styles.categoryDropdownContainer}>
                   <TouchableOpacity
                     style={styles.selectedCategoryContainer}
                     onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
                   >
-                    <Text style={styles.selectedCategoryText}>{selectedCategory} ▼</Text>
+                    <Text style={styles.selectedCategoryText}>
+                      {selectedCategory} ▼
+                    </Text>
                   </TouchableOpacity>
                   {showCategoryDropdown && (
                     <View style={styles.categoryDropdown}>
@@ -232,7 +255,7 @@ export default function MainScreen() {
                           ]}
                           onPress={() => {
                             setSelectedCategory(category);
-                            setShowCategoryDropdown(false);
+                            setShowCategoryDropdown(false); // 드롭다운 닫기
                           }}
                         >
                           <Text
@@ -259,6 +282,7 @@ export default function MainScreen() {
               <TouchableOpacity style={styles.galleryButton} onPress={openGallery}>
                 <Text style={styles.galleryButtonText}>사진 선택하기</Text>
               </TouchableOpacity>
+              {/* 모달 버튼 */}
               <View style={styles.modalButtonsContainer}>
                 <TouchableOpacity style={styles.modalButtonSave} onPress={handleExtract}>
                   <Text style={styles.modalButtonText}>정보 추출</Text>
@@ -275,7 +299,7 @@ export default function MainScreen() {
         </TouchableWithoutFeedback>
       </Modal>
 
-     {/* 상세 모달 */}
+      {/* 상세 모달 */}
       <Modal
         transparent
         visible={detailModalVisible}
@@ -290,24 +314,20 @@ export default function MainScreen() {
             >
               <Text style={styles.closeButtonText}>✖</Text>
             </TouchableOpacity>
-
             {selectedItem && (
-              <>
+              <ScrollView style={styles.modalScrollContainer}>
                 <View style={styles.imageContainer}>
                   <Image
                     source={{ uri: selectedItem.imageUri }}
                     style={styles.modalImage}
+                    resizeMode="contain"
                   />
-                  <Text style={styles.dateText}>2024.09.02</Text>
                 </View>
                 <Text style={styles.modalTitle}>{selectedItem.title}</Text>
                 <View style={styles.textContent}>
                   <Text style={styles.modalText}>{selectedItem.extractedText}</Text>
                 </View>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionButtonText}>추가 작업</Text>
-                </TouchableOpacity>
-              </>
+              </ScrollView>
             )}
           </View>
         </View>
@@ -703,4 +723,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },  
+  modalScrollContainer: {
+    flexGrow: 1,
+    width: "100%",
+    padding: 10,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 200,
+    marginBottom: 20,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  modalImage: {
+    width: "100%",
+    height: "100%",
+  },
+  textContent: {
+    backgroundColor: "#2C2C2E",
+    borderRadius: 10,
+    padding: 15,
+    marginVertical: 15,
+  },
+  modalText: {
+    fontSize: 16,
+    color: "#EAEAEA",
+    lineHeight: 24,
+    textAlign: "left",
+  },
 });
